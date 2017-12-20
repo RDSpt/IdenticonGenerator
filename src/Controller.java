@@ -3,6 +3,7 @@ import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.image.WritableImage;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.*;
@@ -10,12 +11,14 @@ import javafx.stage.*;
 import javax.imageio.ImageIO;
 import java.awt.image.*;
 import java.io.*;
-import java.util.Map;
+import java.util.*;
 
 public class Controller {
 	
 	@FXML
 	private Button btn, svBtn;
+	@FXML
+	private ToggleButton bw;
 	@FXML
 	private TextField tf;
 	@FXML
@@ -28,10 +31,27 @@ public class Controller {
 			f0, f1, f2, f3, f4;
 	
 	public void initialize() {
+		tf.setOnKeyPressed(event -> {
+			if (event.getCode().equals(KeyCode.ENTER)) {
+				reset();
+				String input = tf.getText();
+				if (bw.isSelected()) {
+					colorizeBW(new IdenticonBW(input));
+				}
+				else {
+					colorize(new Identicon(input));
+				}
+			}
+		});
 		btn.setOnAction(event -> {
 			reset();
 			String input = tf.getText();
-			colorize(new Identicon(input));
+			if (bw.isSelected()) {
+				colorizeBW(new IdenticonBW(input));
+			}
+			else {
+				colorize(new Identicon(input));
+			}
 		});
 		svBtn.setOnAction(event -> {
 			saveFile();
@@ -53,6 +73,20 @@ public class Controller {
 		}
 	}
 	
+	private void colorizeBW(IdenticonBW identicon) {
+		Color      color = identicon.getColor();
+		LinkedList grid  = identicon.getGrid();
+		for (int i = 0; i < grid.size(); i++) {
+			Pane currentPane = getPane(i);
+			int  value       = (int) grid.get(i);
+			currentPane.setBackground(new Background(new BackgroundFill(Color.rgb(value,
+			                                                                      value,
+			                                                                      value),
+			                                                            CornerRadii.EMPTY,
+			                                                            Insets.EMPTY)));
+		}
+	}
+	
 	private void saveFile() {
 		// Set Extension filter
 		FileChooser fileChooser = new FileChooser();
@@ -60,7 +94,6 @@ public class Controller {
 		           .add(new FileChooser.ExtensionFilter("png",
 		                                                ".png"));
 		File file = fileChooser.showSaveDialog(null);
-		
 		if (file != null) {
 			try {
 				WritableImage wi = new WritableImage(250,
@@ -69,11 +102,12 @@ public class Controller {
 				                   wi);
 				BufferedImage bufferedImage = SwingFXUtils.fromFXImage(wi,
 				                                                       null);
-				ImageIO.write(bufferedImage, "PNG", file);
-				System.out.println("Saved: "+file);
+				ImageIO.write(bufferedImage,
+				              "PNG",
+				              file);
+				System.out.println("Saved: " + file);
 			} catch (IOException ex) { ex.printStackTrace(); }
 		}
-		
 	}
 	
 	private void reset() {
